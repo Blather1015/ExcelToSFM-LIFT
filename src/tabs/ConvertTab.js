@@ -12,27 +12,54 @@ function ConvertTab({
     handleDownload,
     handleLiftDownload,
     handleReset,
-    fileType
+    fileType,
+    processingTimeSFM,
+    processingTimeLIFT,
+    processingTimeExcel
 }) {
     return (
         <div>
             {fileType !== 'sfm' && (
-                <button onClick={handleConvert} style={{ marginTop: 10 }}>
+                <>
+                    <button onClick={handleConvert} style={{ marginTop: 10 }}>
                     Convert to SFM
-                </button>
+                    </button>
+                    {processingTimeSFM && (
+                        <p style={{ marginTop: 10, color: "green" }}>
+                            Processing time: {processingTimeSFM} ms
+                        </p>
+                    )}
+                </>
             )}
 
             {fileType === 'sfm' && (
-                <button onClick={handleExportToExcel} style={{ marginTop: 10 }}>
+                <>
+                    <button onClick={handleExportToExcel} style={{ marginTop: 10 }}>
                     Export to Excel
-                </button>
+                    </button>
+                    {processingTimeExcel && (
+                        <p style={{ marginTop: 10, color: "green" }}>
+                            Processing time: {processingTimeExcel} ms
+                        </p>
+                    )}
+                    
+                </>
             )}
 
             {fileType !== 'sfm' && (
-                <button onClick={handleConvertLIFT} style={{ marginLeft: 10 }}>
+                <>
+                    <button onClick={handleConvertLIFT} style={{ marginLeft: 10 }}>
                     Convert to LIFT
-                </button>
+                    </button>
+                    {processingTimeLIFT && (
+                        <p style={{ marginTop: 10, color: "green" }}>
+                            Processing time: {processingTimeLIFT} ms
+                        </p>
+                    )}
+                </>
             )}
+
+            
 
             {(sfmContent || liftContent) && (
                 <div>
@@ -51,6 +78,7 @@ function ConvertTab({
                         <>
                             <h2>SFM Conversion success 🎉</h2>
                             <button onClick={handleDownload}>Download .sfm file</button>
+                            
                         </>
                     )}
 
@@ -58,8 +86,12 @@ function ConvertTab({
                         <>
                             <h2>LIFT Conversion success 🎉</h2>
                             <button onClick={handleLiftDownload}>Download .lift ZIP</button>
+                            
                         </>
                     )}
+
+                    
+
 
                     <button
                         onClick={handleReset}

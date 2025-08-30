@@ -15,6 +15,10 @@ function App() {
     const [liftContent, setLiftContent] = useState('');
     const [fileName, setFileName] = useState('');
     const [fileNameInput, setFileNameInput] = useState('');
+    const [processingTimeSFM, setProcessingTimeSFM] = useState(null);
+    const [processingTimeLIFT, setProcessingTimeLIFT] = useState(null);
+    const [processingTimeExcel, setProcessingTimeExcel] = useState(null);
+
 
     const [jsonData, setJsonData] = useState([]);
     const [columns, setColumns] = useState([]);
@@ -37,6 +41,7 @@ function App() {
     const fileInputRef = useRef(null);
 
     const handleConvert = () => {
+        const start = performance.now(); // start timer
         const sfmText = jsonData.map((row) => {
             let entry = '';
             entry += `\\lx ${row[lxColumns[0]] || ''}\n`;
@@ -54,9 +59,14 @@ function App() {
 
         setLiftContent('');
         setSfmContent(sfmText);
+
+        const end = performance.now(); // end timer
+        setProcessingTimeSFM((end - start).toFixed(0)); // in seconds
+        setProcessingTimeLIFT(null);
     };
 
     const handleConvertLIFT = () => {
+        const start = performance.now(); // start timer
         if (!prouLangInput) {
             alert("Please insert a language for the 'Header Prou' field.");
             return;
@@ -64,9 +74,14 @@ function App() {
         const liftXml = generateLiftContent();
         setLiftContent(liftXml);
         setSfmContent('');
+
+        const end = performance.now(); // end timer
+        setProcessingTimeLIFT((end - start).toFixed(0)); // in seconds
+        setProcessingTimeSFM(null);
     };
 
     const handleDownload = () => {
+        
         const base = fileName.replace(/\.[^/.]+$/, '') || 'converted';
         const name = (fileNameInput.trim() || base) + '.sfm';
         const blob = new Blob([sfmContent], { type: 'text/plain' });
@@ -76,9 +91,12 @@ function App() {
         link.href = url;
         link.download = name;
         link.click();
+
+        
     };
 
     const handleLiftDownload = async () => {
+        
         const base = fileName.replace(/\.[^/.]+$/, '') || 'converted';
         const name = fileNameInput.trim() || base;
 
@@ -94,9 +112,12 @@ function App() {
         const blob = await zip.generateAsync({ type: 'blob' });
         saveAs(blob, `${name}_LIFT_Package.zip`);
         setLiftContent(liftXml);
+
+        
     };
 
     const handleExportToExcel = () => {
+        const start = performance.now(); // start timer
         const mappedData = jsonData.map((row) => {
             const newRow = {};
             Object.entries(row).forEach(([key, val]) => {
@@ -110,7 +131,11 @@ function App() {
                     newRow[key] = val;
                 }
             });
+            const end = performance.now(); // end timer
+            setProcessingTimeExcel((end - start).toFixed(0)); // in seconds
             return newRow;
+
+
         });
 
         const worksheet = XLSX.utils.json_to_sheet(mappedData);
@@ -136,6 +161,9 @@ function App() {
         setSfColumn('');
         setExColumn('');
         setProuColumn('');
+        setProcessingTimeLIFT(null);
+        setProcessingTimeSFM(null);
+        setProcessingTimeExcel(null);
         if (fileInputRef.current) fileInputRef.current.value = null;
     };
 
@@ -146,14 +174,18 @@ function App() {
             const lexicalUnit = `\n  <lexical-unit>\n    <form lang="${prouLangInput}">\n      <text>${row[lxColumns[0]] || ''}</text>\n    </form>\n  </lexical-unit>`;
             const trait = `<trait name="morph-type" value="stem" />`;
             const pronunciation = `\n  <pronunciation>\n    <form lang="${prouLangInput}"><text>${row[prouColumn]}</text></form>\n    <media href="${row[sfColumn]}"></media>\n  </pronunciation>`;
+            
             const senses = lxColumns.slice(1).map((col, i) => {
                 const gloss = row[col];
                 if (!gloss) return '';
                 const senseId = uuidv4();
                 const mediaImage = row[pcColumn];
-                return `\n  <sense id="${senseId}" order="${i}">\n    <gloss lang="en"><text>${gloss}</text></gloss>\n    ${i === 0 && mediaImage ? `<illustration href="${mediaImage}" />` : ''}\n  </sense>`;
+
+                
+                return `\n  <sense id="${senseId}" order="${i}">\n <grammatical-info value="${row[psColumn]}"></grammatical-info>\n   <gloss lang="en"><text>${gloss}</text></gloss>\n    ${i === 0 && mediaImage ? `<illustration href="${mediaImage}" />` : ''}\n  </sense>`;
             }).join('');
             return `<entry id="${entryId}" guid="${guid}" dateCreated="2025-06-25T23:43:31Z" dateModified="2025-06-25T23:43:31Z">\n${lexicalUnit}\n${trait}\n${pronunciation}\n${senses}\n</entry>`;
+           
         }).join('\n')}\n</lift>`;
     };
 
@@ -210,6 +242,7 @@ function App() {
                         fileType={fileType}
                         lxLabel={lxLabel}
                         setLxLabel={setLxLabel}
+                        
                     />
                 )}
                 {activeTab === 'convert' && (
@@ -225,6 +258,9 @@ function App() {
                         handleLiftDownload={handleLiftDownload}
                         handleReset={handleReset}
                         fileType={fileType}
+                        processingTimeSFM={processingTimeSFM}
+                        processingTimeLIFT={processingTimeLIFT}
+                        processingTimeExcel={processingTimeExcel}
                     />
                 )}
             </div>
